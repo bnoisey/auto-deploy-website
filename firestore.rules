@@ -42,5 +42,22 @@ service cloud.firestore {
                      get(/databases/$(database)/documents/invitations/$(invitationId)).data.invitedBy == request.auth.uid;
       }
     }
+
+    // Add rules for reports collection
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && 
+                 request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated();
+    }
+
+    // Simplified fileUploads rules
+    match /fileUploads/{uploadId} {
+      allow read: if isAuthenticated() && 
+                 request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && 
+                   getUserData().role == 'admin';
+      allow delete: if isAuthenticated() && 
+                   request.auth.uid == resource.data.userId;
+    }
   }
 } 

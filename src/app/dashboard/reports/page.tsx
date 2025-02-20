@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { db, storage } from '@/lib/firebase'
-import { collection, query, where, orderBy, limit, getDocs, Timestamp, addDoc } from 'firebase/firestore'
-import { CloudArrowUpIcon } from '@heroicons/react/24/outline'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { collection, query, where, orderBy, limit, getDocs, Timestamp, addDoc, getDoc, doc, deleteDoc } from 'firebase/firestore'
+import { CloudArrowUpIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ref, uploadBytes, getDownloadURL, deleteObject, uploadBytesResumable } from 'firebase/storage'
 import { getUserProfile } from '@/lib/firebase/schema'
 import type { UserProfile } from '@/lib/firebase/schema'
 
@@ -27,10 +27,13 @@ interface FileUpload {
 export default function Reports() {
   const { user } = useAuth()
   const [recentReports, setRecentReports] = useState<Report[]>([])
+  const [uploadedFiles, setUploadedFiles] = useState<FileUpload[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -59,6 +62,7 @@ export default function Reports() {
           where('userId', '==', user.uid),
           where('searchedAt', '>=', thirtyDaysAgo),
           orderBy('searchedAt', 'desc'),
+          orderBy('__name__', 'desc'),
           limit(10)
         )
 
@@ -79,6 +83,72 @@ export default function Reports() {
     fetchRecentReports()
   }, [user?.uid])
 
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user?.uid) return;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        console.log('User data:', userDoc.data()); // This will show your user document in the console
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [user?.uid]);
+
+  useEffect(() => {
+    const fetchUploadedFiles = async () => {
+      if (!user?.uid) return
+
+      try {
+        const filesRef = collection(db, 'fileUploads')
+        const q = query(
+          filesRef,
+          where('userId', '==', user.uid),
+          orderBy('uploadedAt', 'desc')
+        )
+
+        const querySnapshot = await getDocs(q)
+        
+        if (querySnapshot.empty) {
+          setUploadedFiles([])
+          return
+        }
+
+        const files = await Promise.all(
+          querySnapshot.docs.map(async (doc) => {
+            const fileData = {
+              id: doc.id,
+              fileName: doc.data().fileName,
+              uploadedAt: doc.data().uploadedAt,
+              downloadUrl: doc.data().downloadUrl,
+              userId: doc.data().userId
+            }
+            
+            const storageRef = ref(storage, `uploads/${user.uid}/${fileData.fileName}`)
+            try {
+              await getDownloadURL(storageRef)
+              return fileData
+            } catch (error: any) {
+              if (error.code === 'storage/object-not-found') {
+                await deleteDoc(doc.ref)
+              }
+              return null
+            }
+          })
+        )
+
+        setUploadedFiles(files.filter((file): file is FileUpload => file !== null))
+      } catch (error) {
+        console.error('Error fetching uploaded files:', error)
+        setUploadedFiles([])
+      }
+    }
+
+    fetchUploadedFiles()
+  }, [user?.uid])
+
   const formatDate = (timestamp: Timestamp) => {
     return new Date(timestamp.seconds * 1000).toLocaleDateString('en-US', {
       month: 'short',
@@ -95,9 +165,9 @@ export default function Reports() {
       return 'Only CSV files are allowed'
     }
     
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-      return 'File size must be less than 10MB'
+    // Check file size (10GB limit)
+    if (file.size > 10737418240) {
+      return 'File size must be less than 10GB'
     }
 
     return null
@@ -123,27 +193,87 @@ export default function Reports() {
     if (!selectedFile || !user?.uid) return
 
     setIsUploading(true)
+    setUploadProgress(0)
     try {
-      // Upload to Firebase Storage
+      // Create storage reference
       const storageRef = ref(storage, `uploads/${user.uid}/${selectedFile.name}`)
-      await uploadBytes(storageRef, selectedFile)
-      const downloadUrl = await getDownloadURL(storageRef)
+      
+      // Create upload task
+      const uploadTask = uploadBytesResumable(storageRef, selectedFile)
 
-      // Save metadata to Firestore
-      await addDoc(collection(db, 'fileUploads'), {
-        fileName: selectedFile.name,
-        uploadedAt: Timestamp.now(),
-        downloadUrl,
-        userId: user.uid
-      })
+      // Monitor upload progress
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+          setUploadProgress(progress)
+        },
+        (error) => {
+          console.error('Error uploading file:', error)
+          alert('Failed to upload file. Please try again.')
+          setIsUploading(false)
+        },
+        async () => {
+          // Upload completed successfully
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref)
 
-      setSelectedFile(null)
-      alert('File uploaded successfully!')
+          // Save metadata to Firestore
+          const docRef = await addDoc(collection(db, 'fileUploads'), {
+            fileName: selectedFile.name,
+            uploadedAt: Timestamp.now(),
+            downloadUrl,
+            userId: user.uid
+          })
+
+          // Add new file to state
+          setUploadedFiles(prev => [{
+            id: docRef.id,
+            fileName: selectedFile.name,
+            uploadedAt: Timestamp.now(),
+            downloadUrl,
+            userId: user.uid
+          }, ...prev])
+
+          setSelectedFile(null)
+          setIsUploading(false)
+          setUploadProgress(0)
+          alert('File uploaded successfully!')
+        }
+      )
     } catch (error) {
       console.error('Error uploading file:', error)
       alert('Failed to upload file. Please try again.')
-    } finally {
       setIsUploading(false)
+      setUploadProgress(0)
+    }
+  }
+
+  const handleDelete = async (fileId: string, fileName: string) => {
+    if (!user?.uid || isDeleting) return
+
+    setIsDeleting(fileId)
+    try {
+      // Delete from Storage - with error handling for non-existent files
+      const storageRef = ref(storage, `uploads/${user.uid}/${fileName}`)
+      try {
+        await deleteObject(storageRef)
+      } catch (error: any) {
+        // If the file doesn't exist in storage, we can still proceed to delete the Firestore record
+        if (error.code !== 'storage/object-not-found') {
+          throw error
+        }
+      }
+
+      // Delete from Firestore
+      await deleteDoc(doc(db, 'fileUploads', fileId))
+
+      // Update state
+      setUploadedFiles(prev => prev.filter(file => file.id !== fileId))
+      alert('File deleted successfully!')
+    } catch (error) {
+      console.error('Error deleting file:', error)
+      alert('Failed to delete file. Please try again.')
+    } finally {
+      setIsDeleting(null)
     }
   }
 
@@ -173,7 +303,7 @@ export default function Reports() {
                     <p className="mb-2 text-sm text-gray-500">
                       <span className="font-semibold">Click to upload</span> or drag and drop
                     </p>
-                    <p className="text-xs text-gray-500">CSV files only (max. 10MB)</p>
+                    <p className="text-xs text-gray-500">CSV files only (max. 10GB)</p>
                   </div>
                   <input 
                     type="file" 
@@ -198,10 +328,73 @@ export default function Reports() {
                       {isUploading ? 'Uploading...' : 'Upload File'}
                     </button>
                   </div>
+                  {isUploading && (
+                    <div className="mt-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1 text-center">
+                        {Math.round(uploadProgress)}% uploaded
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Uploaded Files Section */}
+      {userProfile?.role === 'admin' && (
+        <div className="mt-8">
+          <h3 className="text-base font-semibold leading-6 text-gray-900">
+            Uploaded Files
+          </h3>
+          {uploadedFiles.length > 0 ? (
+            <ul role="list" className="mt-6 divide-y divide-gray-100 border-t border-gray-200">
+              {uploadedFiles.map((file) => (
+                <li key={file.id} className="flex items-center justify-between gap-x-6 py-5">
+                  <div className="min-w-0">
+                    <div className="flex items-start gap-x-3">
+                      <p className="text-sm font-semibold leading-6 text-gray-900">
+                        {file.fileName}
+                      </p>
+                    </div>
+                    <div className="mt-1 flex items-center gap-x-2 text-xs leading-5 text-gray-500">
+                      <p className="whitespace-nowrap">
+                        Uploaded on {formatDate(file.uploadedAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-none items-center gap-x-4">
+                    <a
+                      href={file.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hidden rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
+                    >
+                      Download
+                    </a>
+                    <button
+                      onClick={() => handleDelete(file.id, file.fileName)}
+                      disabled={isDeleting === file.id}
+                      className="rounded-md bg-red-50 p-2 text-red-600 hover:bg-red-100"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="mt-6 text-center text-gray-500">
+              No files uploaded yet
+            </div>
+          )}
         </div>
       )}
 
