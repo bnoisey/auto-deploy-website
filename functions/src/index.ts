@@ -1,48 +1,29 @@
-import { onDocumentCreated } from 'firebase-functions/v2/firestore'
 import { onRequest } from 'firebase-functions/v2/https'
 import * as admin from 'firebase-admin'
-import { getFirestore } from 'firebase-admin/firestore'
-import * as nodemailer from 'nodemailer'
-import { defineString } from 'firebase-functions/params'
 
 admin.initializeApp()
 
-// Define config parameters
-const emailUser = defineString('EMAIL_USER')
-const emailPassword = defineString('EMAIL_APP_PASSWORD')
+// Simple contact form endpoint
+export const contact = onRequest(async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).send('Method Not Allowed')
+    return
+  }
 
-interface UserData {
-  email: string
-  role: string
-}
+  const { name, email, message } = req.body
 
-// Create transporter function
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: emailUser.value(),
-      pass: emailPassword.value(),
-    }
-  })
-}
-
-// Basic email sending function
-export const sendEmail = onRequest(async (req, res) => {
-  const transporter = createTransporter()
-  
   try {
-    await transporter.sendMail({
-      from: emailUser.value(),
-      to: req.body.to,
-      subject: req.body.subject,
-      text: req.body.text,
+    // Store the contact form submission in Firestore
+    await admin.firestore().collection('contacts').add({
+      name,
+      email,
+      message,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
     })
-    res.status(200).json({ success: true })
+
+    res.status(200).json({ message: 'Contact form submitted successfully' })
   } catch (error) {
-    console.error('Error sending email:', error)
-    res.status(500).json({ error: 'Failed to send email' })
+    console.error('Error:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
   }
 })

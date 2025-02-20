@@ -15,6 +15,10 @@ interface PasswordError {
   lowercase?: string;
   number?: string;
   special?: string;
+  match?: string;
+  current?: string;
+  new?: string;
+  confirm?: string;
 }
 
 export default function Account() {
@@ -85,17 +89,29 @@ export default function Account() {
     setIsChangingPassword(true);
     setPasswordErrors({});
 
+    const errors: PasswordError = {}
+
+    // Validation checks
+    if (!currentPassword) {
+      errors.current = 'Current password is required'
+    }
+    if (!newPassword) {
+      errors.new = 'New password is required'
+    }
+    if (!confirmPassword) {
+      errors.confirm = 'Please confirm your new password'
+    }
+    if (newPassword !== confirmPassword) {
+      errors.match = 'Passwords do not match'
+    }
+
+    setPasswordErrors(errors)
+
     try {
       // Validate new password
-      const errors = validatePassword(newPassword);
-      if (Object.keys(errors).length > 0) {
-        setPasswordErrors(errors);
-        return;
-      }
-
-      // Check if passwords match
-      if (newPassword !== confirmPassword) {
-        setPasswordErrors({ ...errors, match: 'Passwords do not match' });
+      const passwordErrors = validatePassword(newPassword);
+      if (Object.keys(passwordErrors).length > 0) {
+        setPasswordErrors(passwordErrors);
         return;
       }
 
