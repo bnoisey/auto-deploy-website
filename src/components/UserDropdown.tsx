@@ -4,28 +4,57 @@ import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { getUserProfile } from '@/lib/firebase/schema'
 import type { UserProfile } from '@/lib/firebase/schema'
+import { UserCircleIcon } from '@heroicons/react/24/solid'
 
 export default function UserDropdown() {
   const { user, logout } = useAuth()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!user?.uid) return
+      if (!user?.uid) {
+        setIsLoading(false)
+        return
+      }
+      
       try {
+        setIsLoading(true)
         const profile = await getUserProfile(user.uid)
         setUserProfile(profile)
       } catch (error) {
         console.error('Error fetching user profile:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchUserProfile()
   }, [user?.uid])
 
+  if (isLoading) {
+    return (
+      <Menu as="div" className="relative">
+        <Menu.Button className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          <UserCircleIcon className="h-8 w-8 text-gray-400 animate-pulse" aria-hidden="true" />
+        </Menu.Button>
+      </Menu>
+    )
+  }
+
   return (
     <Menu as="div" className="relative">
-      {/* ... existing Menu.Button ... */}
+      <Menu.Button className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+        {user?.photoURL ? (
+          <img
+            className="h-8 w-8 rounded-full"
+            src={user.photoURL}
+            alt={user.displayName || 'User avatar'}
+          />
+        ) : (
+          <UserCircleIcon className="h-8 w-8 text-gray-400" aria-hidden="true" />
+        )}
+      </Menu.Button>
 
       <Transition
         as={Fragment}

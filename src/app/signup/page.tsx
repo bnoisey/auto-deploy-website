@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -31,37 +33,95 @@ export default function Signup() {
     setPasswordError(error);
   }, [password]);
 
-  const handleEmailSignup = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const passwordValidationError = validatePassword(password);
-    if (passwordValidationError) {
-      setError(passwordValidationError);
-      return;
-    }
-
     setIsLoading(true);
-    setError('');
-
+    
     try {
-      await signUp(email, password);
+      console.log('Starting signup process...');
+      
+      // Create the user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      console.log('User created:', user.uid);
+
+      // Create organization
+      const orgId = user.uid + '-org';
+      console.log('Creating organization:', orgId);
+      
+      try {
+        await setDoc(doc(db, 'organizations', orgId), {
+          name: email.split('@')[0] + "'s Organization",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log('Organization created successfully');
+      } catch (orgError) {
+        console.error('Error creating organization:', orgError);
+        throw orgError;
+      }
+
+      // Create user profile
+      console.log('Creating user profile...');
+      try {
+        await setDoc(doc(db, 'users', user.uid), {
+          userId: user.uid,
+          email: user.email,
+          role: 'admin',
+          organizationId: orgId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log('User profile created successfully');
+      } catch (userError) {
+        console.error('Error creating user profile:', userError);
+        throw userError;
+      }
+
+      // Redirect to dashboard
       router.push('/dashboard');
-    } catch (error: any) {
-      setError(error.message || 'Failed to create account');
+    } catch (error) {
+      console.error('Signup error:', error);
+      setError('Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setIsLoading(true);
-    setError('');
-
+  const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
+      setIsLoading(true);
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+
+      // Check if user profile exists
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      
+      if (!userDoc.exists()) {
+        // Create organization
+        const orgId = user.uid + '-org';
+        await setDoc(doc(db, 'organizations', orgId), {
+          name: user.email?.split('@')[0] + "'s Organization",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        // Create user profile with admin role
+        await setDoc(doc(db, 'users', user.uid), {
+          userId: user.uid,
+          email: user.email,
+          role: 'admin',
+          organizationId: orgId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+
       router.push('/dashboard');
-    } catch (error: any) {
-      setError(error.message || 'Failed to sign in with Google');
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      setError('Failed to sign in with Google');
     } finally {
       setIsLoading(false);
     }
@@ -88,7 +148,7 @@ export default function Signup() {
 
         <div className="mt-8">
           <button
-            onClick={handleGoogleSignup}
+            onClick={handleGoogleSignIn}
             disabled={isLoading}
             className="w-full flex items-center justify-center gap-3 px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -123,7 +183,7 @@ export default function Signup() {
           </div>
         </div>
 
-        <form onSubmit={handleEmailSignup} className="mt-6 space-y-6">
+        <form onSubmit={handleSignUp} className="mt-6 space-y-6">
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">

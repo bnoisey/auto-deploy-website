@@ -3,13 +3,13 @@ import { getFirestore } from 'firebase/firestore'
 import { Timestamp, doc, setDoc } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ",
-  authDomain: "webdesigntest-12d11.firebaseapp.com",
-  projectId: "webdesigntest-12d11",
-  storageBucket: "webdesigntest-12d11.firebasestorage.app",
-  messagingSenderId: "504944796544",
-  appId: "1:504944796544:web:b14fcaa569d03ce2499765"
-}
+  apiKey: "AIzaSyA3CB-w4HOyonaTx-JWQnjwfbbtHVmAdjI",
+  authDomain: "clh-dev-website.firebaseapp.com",
+  projectId: "clh-dev-website",
+  storageBucket: "clh-dev-website.firebasestorage.app",
+  messagingSenderId: "834040793218",
+  appId: "1:834040793218:web:1747dddd67789af1f28c9b"
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig)

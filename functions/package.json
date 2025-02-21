@@ -1,5 +1,5 @@
 {
-  "name": "functions",
+  "name": "clh-dev-website-functions",
   "scripts": {
     "lint": "eslint src",
     "build": "tsc",
@@ -11,7 +11,7 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "main": "lib/index.js",
   "dependencies": {
