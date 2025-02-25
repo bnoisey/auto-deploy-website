@@ -3,12 +3,12 @@ import { getFirestore } from 'firebase/firestore'
 import { Timestamp, doc, setDoc } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyA3CB-w4HOyonaTx-JWQnjwfbbtHVmAdjI",
-  authDomain: "clh-dev-website.firebaseapp.com",
-  projectId: "clh-dev-website",
-  storageBucket: "clh-dev-website.firebasestorage.app",
-  messagingSenderId: "834040793218",
-  appId: "1:834040793218:web:1747dddd67789af1f28c9b"
+  apiKey: REDACTED,
+  authDomain: REDACTED,
+  projectId: REDACTED,
+  storageBucket: REDACTED,
+  messagingSenderId: REDACTED,
+  appId: REDACTED
 };
 
 // Initialize Firebase
@@ -16,7 +16,7 @@ const app = initializeApp(firebaseConfig)
 const db = getFirestore(app)
 
 // Run this script to set up the first admin user
-const ADMIN_USER_ID = 'HVXDKgHn99hxq8XRMKz5oORoVAd2' // Your user ID
+const ADMIN_USER_ID = REDACTED // Your user ID
 const DEFAULT_ORG_ID = 'default-org'
 
 async function setupAdmin() {
