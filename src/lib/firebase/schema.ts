@@ -8,6 +8,7 @@ export interface UserProfile {
   userId: string
   email: string
   displayName?: string
+  photoURL?: string
   role: UserRole
   organizationId: string
   createdAt: Timestamp

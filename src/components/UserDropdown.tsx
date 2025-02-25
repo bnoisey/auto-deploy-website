@@ -45,11 +45,11 @@ export default function UserDropdown() {
   return (
     <Menu as="div" className="relative">
       <Menu.Button className="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-        {user?.photoURL ? (
+        {(user?.photoURL || userProfile?.photoURL) ? (
           <img
             className="h-8 w-8 rounded-full"
-            src={user.photoURL}
-            alt={user.displayName || 'User avatar'}
+            src={user?.photoURL || userProfile?.photoURL}
+            alt={user?.displayName || 'User avatar'}
           />
         ) : (
           <UserCircleIcon className="h-8 w-8 text-gray-400" aria-hidden="true" />

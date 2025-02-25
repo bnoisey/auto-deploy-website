@@ -107,10 +107,12 @@ export default function Signup() {
           updatedAt: serverTimestamp()
         });
 
-        // Create user profile with admin role
+        // Create user profile with admin role and photoURL
         await setDoc(doc(db, 'users', user.uid), {
           userId: user.uid,
           email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
           role: 'admin',
           organizationId: orgId,
           createdAt: serverTimestamp(),

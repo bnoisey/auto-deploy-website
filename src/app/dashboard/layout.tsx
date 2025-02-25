@@ -85,7 +85,8 @@ export default function DashboardLayout({
   )
 
   return (
-    <div>
+    <div className="min-h-screen flex">
+      {/* Mobile sidebar */}
       <Transition.Root show={sidebarOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
           <Transition.Child
@@ -132,20 +133,24 @@ export default function DashboardLayout({
       </Transition.Root>
 
       {/* Desktop sidebar */}
-      <div className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300 ${
-        sidebarCollapsed ? 'lg:w-20' : 'lg:w-72'
-      }`}>
+      <div className={`hidden lg:flex flex-col ${sidebarCollapsed ? 'w-16' : 'w-64'} transition-all duration-300 ease-in-out`}>
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
-          <div className="h-16 flex items-center justify-end -mr-2 mt-2">
+          <div className="h-16"></div>
+          
+          {/* Centered collapse button */}
+          <div className="flex items-center -mx-2">
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+              className={`
+                p-2 rounded-md hover:bg-gray-100 transition-colors
+                ${sidebarCollapsed ? 'w-full flex justify-center' : 'ml-auto'}
+              `}
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {sidebarCollapsed ? (
-                <ChevronDoubleRightIcon className="h-5 w-5 text-gray-500" />
+                <ChevronDoubleRightIcon className="h-6 w-6 text-gray-400" />
               ) : (
-                <ChevronDoubleLeftIcon className="h-5 w-5 text-gray-500" />
+                <ChevronDoubleLeftIcon className="h-6 w-6 text-gray-400" />
               )}
             </button>
           </div>
@@ -161,30 +166,29 @@ export default function DashboardLayout({
       </div>
 
       {/* Main content area */}
-      <div className={`transition-all duration-300 ${
-        sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'
-      }`}>
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+      <div className="flex-1 flex flex-col">
+        {/* Top nav */}
+        <div className="sticky top-0 z-10 flex h-16 flex-shrink-0 bg-white shadow">
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+            className="lg:hidden px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
             onClick={() => setSidebarOpen(true)}
           >
             <span className="sr-only">Open sidebar</span>
             <Bars3Icon className="h-6 w-6" aria-hidden="true" />
           </button>
-
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6 justify-end">
-            <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <span className="text-sm font-medium text-gray-900">
-                {user?.displayName || user?.email}
-              </span>
+          <div className="flex-1 px-4 flex justify-between">
+            <div className="flex-1 flex items-center">
+              <Link href="/" className="text-xl font-bold text-gray-900">
+                Cove Lane Health
+              </Link>
             </div>
           </div>
         </div>
 
-        <main className="py-10">
-          <div className="px-4 sm:px-6 lg:px-8">
+        {/* Main content */}
+        <main className="flex-1 p-6">
+          <div className="mx-auto max-w-7xl">
             {children}
           </div>
         </main>
