@@ -18,8 +18,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
 const navigation = [
-  { name: 'Overview', href: '/dashboard', icon: HomeIcon },
   { name: 'Reports', href: '/dashboard/reports', icon: DocumentChartBarIcon },
+  { name: 'Report Summaries', href: '/dashboard', icon: HomeIcon },
   { name: 'Usage Analytics', href: '/dashboard/analytics', icon: ChartBarIcon },
   { name: 'Team', href: '/dashboard/team', icon: UserGroupIcon },
   { name: 'Account', href: '/dashboard/account', icon: UserCircleIcon },
