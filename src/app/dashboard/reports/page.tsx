@@ -291,9 +291,9 @@ export default function Reports() {
       {userProfile?.role === 'admin' && (
         <div className="mt-8 bg-white rounded-lg shadow">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Upload Report</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Upload Claims File</h3>
             <div className="mt-2 max-w-xl text-sm text-gray-500">
-              <p>Upload your CSV file to analyze the data.</p>
+              <p>Upload claims in CSV format to initiate repricing analysis.</p>
             </div>
             <div className="mt-5">
               <div className="flex items-center justify-center w-full">
