@@ -15,6 +15,9 @@ import {
 } from 'firebase/auth';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';  // Import Firestore instance
 
 type AuthContextType = {
   user: User | null;
@@ -39,9 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string) => {
     await createUserWithEmailAndPassword(auth, email, password);
   };
-
+const router = useRouter()
   const logout = async () => {
     await signOut(auth);
+    router.push("/")
   };
 
   const signInWithGoogle = async () => {
@@ -80,6 +84,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // const value = {
+  //   user: user || null,
+  //   loading,
+  //   signIn,
+  //   signUp,
+  //   logout,
+  //   signInWithGoogle,
+  //   deleteAccount,
+  //   updatePassword,
+  // };
+  const getUserProfile = async () => {
+    if (!auth.currentUser) return null;
+  
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const userSnap = await getDoc(userRef);
+  
+    if (userSnap.exists()) {
+      return { userId: auth.currentUser.uid, ...userSnap.data() };
+    } else {
+      console.error("No user data found in Firestore");
+      return null;
+    }
+  };
+  
   const value = {
     user: user || null,
     loading,
@@ -89,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithGoogle,
     deleteAccount,
     updatePassword,
+    getUserProfile, // Add this function to the context
   };
 
   return (

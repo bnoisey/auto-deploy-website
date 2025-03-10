@@ -4,44 +4,101 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+// import { getUserProfile } from '@/lib/firebase/schema';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, serverTimestamp, setDoc } from '@firebase/firestore';
+import { GoogleAuthProvider, signInWithPopup } from '@firebase/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, getUserProfile, user } = useAuth();
   const router = useRouter();
+  
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
+  
     try {
       await signIn(email, password);
-      router.push('/dashboard');
+  
+      // Wait until user state updates
+      let retries = 0;
+      while (!auth.currentUser && retries < 5) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        retries++;
+      }
+  
+      const profile = await getUserProfile();
+  
+      if (profile) {
+        router.push(profile.role === 'admin' ? '/dashboard' : profile.role === 'superadmin' ? '/superAdmin/userManagement' : '/');
+      }
     } catch (error: any) {
       setError(error.message || 'Failed to sign in');
     } finally {
       setIsLoading(false);
     }
   };
+  // const handleGoogleLogin = async () => {
+  //   setIsLoading(true);
+  //   setError('');
+
+  //   try {
+  //     await signInWithGoogle();
+  //     router.push('/dashboard');
+  //   } catch (error: any) {
+  //     setError(error.message || 'Failed to sign in with Google');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setError('');
-
     try {
-      await signInWithGoogle();
+      setIsLoading(true);
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = userCredential.user;
+
+      // Check if user profile exists
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      
+      if (!userDoc.exists()) {
+        // Create organization
+        const orgId = user.uid + '-org';
+        await setDoc(doc(db, 'organizations', orgId), {
+          name: user.email?.split('@')[0] + "'s Organization",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+
+        // Create user profile with admin role and photoURL
+        await setDoc(doc(db, 'users', user.uid), {
+          userId: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          role: 'admin',
+          organizationId: orgId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+
       router.push('/dashboard');
-    } catch (error: any) {
-      setError(error.message || 'Failed to sign in with Google');
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      setError('Failed to sign in with Google');
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen pt-24 pb-12 flex flex-col items-center">
       <div className="w-full max-w-md">

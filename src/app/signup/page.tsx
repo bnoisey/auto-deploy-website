@@ -8,6 +8,7 @@ import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+console.log("auth",auth)
 
 export default function Signup() {
   const [email, setEmail] = useState('');
