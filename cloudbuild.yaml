@@ -11,9 +11,13 @@ steps:
     env:
       - 'NODE_ENV=production'
 
-  # Deploy to Firebase Hosting
-  - name: 'gcr.io/$PROJECT_ID/firebase'
-    args: ['deploy', '--project', '$PROJECT_ID', '--only', 'hosting']
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '.'
 
   # Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -29,14 +33,6 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
 
-  # Build the container image
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
-      - '.'
-
 images:
   - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
 
@@ -51,4 +47,4 @@ secrets:
 
 serviceAccount: projects/$PROJECT_ID/serviceAccounts/YOUR_SERVICE_ACCOUNT_EMAIL
 
-timeout: '600s'
+timeout: '1800s'
