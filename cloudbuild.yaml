@@ -49,4 +49,7 @@ substitutions:
   _SERVICE_NAME: clh-dev-website
   _REGION: us-central1
 
+options:
+  logging: CLOUD_LOGGING_ONLY
+
 timeout: '1800s'
