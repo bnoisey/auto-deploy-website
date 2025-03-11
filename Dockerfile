@@ -7,14 +7,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install production dependencies only
+RUN npm ci --only=production
 
-# Copy the rest of the application
-COPY . .
-
-# Build the application
-RUN npm run build
+# Copy the pre-built application
+COPY .next ./.next
+COPY public ./public
+COPY next.config.js ./next.config.js
+COPY .env ./.env
 
 # Expose the port the app runs on
 EXPOSE 3000
