@@ -23,6 +23,18 @@ steps:
       - 'build'
       - '-t'
       - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=webdesigntest-12d11.firebaseapp.com'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_PROJECT_ID=webdesigntest-12d11'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=webdesigntest-12d11.firebasestorage.app'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=504944796544'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
       - '.'
 
   # Deploy to Firebase Hosting
@@ -51,6 +63,8 @@ steps:
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=webdesigntest-12d11.firebaseapp.com,NEXT_PUBLIC_FIREBASE_PROJECT_ID=webdesigntest-12d11,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=webdesigntest-12d11.firebasestorage.app,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=504944796544,NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
 
 images:
   - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'

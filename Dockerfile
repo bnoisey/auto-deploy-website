@@ -14,7 +14,15 @@ RUN npm ci --only=production
 COPY .next ./.next
 COPY public ./public
 COPY next.config.js ./next.config.js
-COPY .env ./.env
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ
+ENV NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=webdesigntest-12d11.firebaseapp.com
+ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=webdesigntest-12d11
+ENV NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=webdesigntest-12d11.firebasestorage.app
+ENV NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=504944796544
+ENV NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765
 
 # Expose the port the app runs on
 EXPOSE 3000
