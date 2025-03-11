@@ -8,10 +8,10 @@ export default function superAdmin() {
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'User'
   
   const [postalCode, setPostalCode] = useState("");
-  const [data, setData] = useState(null);
+  const [data, setData] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 

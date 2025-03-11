@@ -29,7 +29,7 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { getUserProfile } from "@/lib/firebase/schema";
-import type { UserProfile } from "@/lib/firebase/schema";
+import type { UserProfile, ProcessedReport } from "@/lib/firebase/schema";
 
 interface Report {
   id: string;

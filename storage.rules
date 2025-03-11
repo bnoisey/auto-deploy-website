@@ -2,11 +2,39 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null &&
+             firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isSuperAdmin() {
+      return request.auth != null &&
+             firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
+    // Regular user uploads
     match /uploads/{userId}/{fileName} {
-      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow read, delete: if request.auth != null && 
+                         (request.auth.uid == userId || isAdmin() || isSuperAdmin());
       allow write: if request.auth != null && 
-                   request.auth.uid == userId &&
-                   request.resource.size < 10737418240; // 10GB limit
+                  request.auth.uid == userId &&
+                  request.resource.size < 10737418240; // 10GB limit
+    }
+
+    // Reports storage
+    match /reports/{fileName} {
+      allow read: if request.auth != null && (isAdmin() || isSuperAdmin());
+      allow write: if request.auth != null && (isAdmin() || isSuperAdmin());
+      allow delete: if request.auth != null && (isAdmin() || isSuperAdmin());
+    }
+
+    // Processed reports storage
+    match /processed_reports/{fileName} {
+      allow read: if request.auth != null && (isAdmin() || isSuperAdmin());
+      allow write: if request.auth != null && (isAdmin() || isSuperAdmin());
+      allow delete: if request.auth != null && (isAdmin() || isSuperAdmin());
     }
   }
 }

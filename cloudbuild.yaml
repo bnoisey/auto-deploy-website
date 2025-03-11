@@ -1,0 +1,31 @@
+steps:
+  - name: 'node:18' # Or your Node.js version
+    entrypoint: 'npm'
+    args: ['install']
+  - name: 'node:18'
+    entrypoint: 'npm'
+    args: ['run', 'build'] # Or your build command
+  - name: 'gcr.io/firebase-tools'
+    args: ['deploy', '--project=${PROJECT_ID}', '--only', 'hosting']
+    secretEnv: ['FIREBASE_TOKEN']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/your-service-name', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/your-service-name']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [
+      'run', 'deploy', 'your-service-name',
+      '--image', 'gcr.io/$PROJECT_ID/your-service-name',
+      '--platform', 'managed',
+      '--region', 'us-central1',
+      '--allow-unauthenticated'
+    ]
+secrets:
+  - kmsKeyName: projects/${PROJECT_ID}/locations/global/keyRings/firebase-secrets/cryptoKeys/firebase-key #replace with your key
+    secretEnv:
+      FIREBASE_TOKEN: '${FIREBASE_TOKEN_ENCRYPTED}'
+serviceAccount: projects/$PROJECT_ID/serviceAccounts/YOUR_SERVICE_ACCOUNT_EMAIL
+substitutions:
+  _REGION: 'us-central1'
+  _SERVICE_NAME: 'your-service-name'
+timeout: '600s'

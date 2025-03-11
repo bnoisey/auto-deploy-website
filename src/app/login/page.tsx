@@ -4,17 +4,17 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-// import { getUserProfile } from '@/lib/firebase/schema';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, serverTimestamp, setDoc } from '@firebase/firestore';
 import { GoogleAuthProvider, signInWithPopup } from '@firebase/auth';
+import { getUserProfile } from '@/lib/firebase/schema';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signInWithGoogle, getUserProfile, user } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
   const router = useRouter();
   
 
@@ -33,7 +33,7 @@ export default function Login() {
         retries++;
       }
   
-      const profile = await getUserProfile();
+      const profile = await getUserProfile(auth.currentUser?.uid || '');
   
       if (profile) {
         router.push(profile.role === 'admin' ? '/dashboard' : profile.role === 'superadmin' ? '/superAdmin/userManagement' : '/');

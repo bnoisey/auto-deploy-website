@@ -15,15 +15,15 @@
       ]
     },
     {
-      "collectionGroup": "reports",
+      "collectionGroup": "processedReports",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "userId",
+          "fieldPath": "adminId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "searchedAt",
+          "fieldPath": "uploadedAt",
           "order": "DESCENDING"
         }
       ]

@@ -26,18 +26,18 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
 
-# firebase
-.firebase/
-firebase-debug.log*
+# vercel
+.vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
 # IDE
-.vscode/
 .idea/
+.vscode/
 
 # From a Secondary GitIgnore
 # Logs
@@ -103,9 +103,6 @@ node_modules/
 
 # Yarn Integrity file
 .yarn-integrity
-
-# dotenv environment variables file
-.env
 
 # dataconnect generated files
 .dataconnect

@@ -18,6 +18,12 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isSuperAdmin() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
@@ -57,20 +63,41 @@ service cloud.firestore {
       }
     }
 
-    // Add rules for reports collection
+    // Reports collection
     match /reports/{reportId} {
       allow read: if isAuthenticated() && 
-                 request.auth.uid == resource.data.userId;
+                 (request.auth.uid == resource.data.userId || isAdmin() || isSuperAdmin());
       allow create: if isAuthenticated();
+      allow delete: if isAuthenticated() && 
+                   (request.auth.uid == resource.data.userId || isAdmin() || isSuperAdmin());
     }
 
-    // Simplified fileUploads rules
+    // File uploads collection
     match /fileUploads/{uploadId} {
       allow read: if isAuthenticated() && 
-                 request.auth.uid == resource.data.userId;
-      allow create: if isAuthenticated() && isAdmin();
+                 (request.auth.uid == resource.data.userId || 
+                  request.auth.uid == resource.data.adminId || 
+                  isAdmin() || 
+                  isSuperAdmin());
+      allow create: if isAuthenticated() && (isAdmin() || isSuperAdmin());
       allow delete: if isAuthenticated() && 
-                   request.auth.uid == resource.data.userId;
+                   (request.auth.uid == resource.data.userId || 
+                    request.auth.uid == resource.data.adminId || 
+                    isAdmin() || 
+                    isSuperAdmin());
+    }
+
+    // Processed reports collection
+    match /processedReports/{reportId} {
+      allow read: if isAuthenticated() && 
+                 (request.auth.uid == resource.data.adminId || 
+                  isAdmin() || 
+                  isSuperAdmin());
+      allow create: if isAuthenticated() && (isAdmin() || isSuperAdmin());
+      allow delete: if isAuthenticated() && 
+                   (request.auth.uid == resource.data.adminId || 
+                    isAdmin() || 
+                    isSuperAdmin());
     }
 
     // Basic rules for other collections

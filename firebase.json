@@ -20,24 +20,9 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "frameworksBackend": {},
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "**/*.@(jpg|jpeg|gif|png|ico|webp|svg)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=3600"
-          }
-        ]
-      }
-    ]
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
   },
   "emulators": {
     "auth": {
@@ -53,5 +38,11 @@
       "enabled": true
     },
     "singleProjectMode": true
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build && next export",
+    "start": "next start",
+    "lint": "next lint"
   }
 }

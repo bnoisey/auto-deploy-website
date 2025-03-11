@@ -284,9 +284,10 @@ export default function UserReports() {
                 <tr key={report.id} className="border">
                   <td className="border p-2 text-center">{report.fileName}</td>
                   <td className="border p-2 text-center">
-                    {new Date(
-                      report.uploadedAt.seconds * 1000
-                    ).toLocaleString()}
+                    {report.uploadedAt?.seconds ? 
+                      new Date(report.uploadedAt.seconds * 1000).toLocaleString() 
+                      : 'N/A'
+                    }
                   </td>
                   <td className="border p-2 text-center">
                     <button
@@ -333,7 +334,10 @@ export default function UserReports() {
         <tr key={report.id} className="border">
           <td className="border p-2 text-center">{report.fileName}</td>
           <td className="border p-2 text-center">
-            {new Date(report.uploadedAt.seconds * 1000).toLocaleString()}
+            {report.uploadedAt?.seconds ? 
+              new Date(report.uploadedAt.seconds * 1000).toLocaleString() 
+              : 'N/A'
+            }
           </td>
           <td className="border p-2 text-center">
             <button

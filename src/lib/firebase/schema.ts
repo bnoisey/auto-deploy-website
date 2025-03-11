@@ -1,8 +1,9 @@
 import { collection, addDoc, Timestamp, doc, setDoc, getDoc, query, where, getDocs, deleteDoc } from 'firebase/firestore'
+import { FieldValue } from 'firebase/firestore'
 import { db } from '../firebase'
 
 // User Roles and Permissions
-export type UserRole = 'admin' | 'team'
+export type UserRole = 'admin' | 'team' | 'superadmin'
 
 export interface UserProfile {
   userId: string
@@ -11,8 +12,8 @@ export interface UserProfile {
   photoURL?: string
   role: UserRole
   organizationId: string
-  createdAt: Timestamp
-  updatedAt: Timestamp
+  createdAt: Timestamp | FieldValue
+  updatedAt: Timestamp | FieldValue
 }
 
 // Organization
@@ -33,6 +34,15 @@ export interface Invitation {
   invitedBy: string
   createdAt: Timestamp
   updatedAt: Timestamp
+}
+
+// Processed Report
+export interface ProcessedReport {
+  id: string;
+  fileName: string;
+  downloadUrl: string;
+  uploadedAt: Timestamp;
+  adminId?: string;
 }
 
 // Organization Management
