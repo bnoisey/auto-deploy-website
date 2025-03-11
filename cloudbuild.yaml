@@ -19,6 +19,15 @@ steps:
       - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
       - '.'
 
+  # Deploy to Firebase Hosting
+  - name: 'gcr.io/firebase/firebase'
+    args:
+      - 'deploy'
+      - '--project'
+      - '$PROJECT_ID'
+      - '--only'
+      - 'hosting'
+
   # Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
@@ -39,12 +48,5 @@ images:
 substitutions:
   _SERVICE_NAME: clh-dev-website
   _REGION: us-central1
-
-secrets:
-  - kmsKeyName: projects/${PROJECT_ID}/locations/global/keyRings/firebase-secrets/cryptoKeys/firebase-key #replace with your key
-    secretEnv:
-      FIREBASE_TOKEN: '${FIREBASE_TOKEN_ENCRYPTED}'
-
-serviceAccount: projects/$PROJECT_ID/serviceAccounts/YOUR_SERVICE_ACCOUNT_EMAIL
 
 timeout: '1800s'
