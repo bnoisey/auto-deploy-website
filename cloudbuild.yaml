@@ -37,15 +37,11 @@ steps:
       - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
       - '.'
 
-  # Install Firebase CLI
-  - name: 'node:18'
-    entrypoint: npm
-    args: ['install', '-g', 'firebase-tools']
-
   # Deploy to Firebase Hosting
   - name: 'node:18'
-    entrypoint: firebase
+    entrypoint: npx
     args:
+      - 'firebase-tools'
       - 'deploy'
       - '--project'
       - '$PROJECT_ID'
