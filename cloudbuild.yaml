@@ -37,18 +37,22 @@ steps:
       - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
       - '.'
 
+  # Install Firebase CLI
+  - name: 'node:18'
+    entrypoint: npm
+    args: ['install', '-g', 'firebase-tools']
+
   # Deploy to Firebase Hosting
-  - name: 'gcr.io/firebase/firebase'
+  - name: 'node:18'
+    entrypoint: firebase
     args:
       - 'deploy'
       - '--project'
       - '$PROJECT_ID'
       - '--only'
       - 'hosting'
-    env:
-      - 'FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ'
-      - 'FIREBASE_AUTH_DOMAIN=webdesigntest-12d11.firebaseapp.com'
-      - 'FIREBASE_PROJECT_ID=webdesigntest-12d11'
+      - '--token'
+      - '$_FIREBASE_TOKEN'
 
   # Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -72,6 +76,7 @@ images:
 substitutions:
   _SERVICE_NAME: clh-dev-website
   _REGION: us-central1
+  _FIREBASE_TOKEN: ${_FIREBASE_TOKEN}
 
 options:
   logging: CLOUD_LOGGING_ONLY
