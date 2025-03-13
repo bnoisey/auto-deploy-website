@@ -5,11 +5,14 @@ steps:
     args:
       - '-c'
       - |
-        if [ -d /workspace/node_modules ]; then
-          echo "Cache exists"
+        echo "Checking for node_modules cache..."
+        if gsutil stat gs://webdesigntest-12d11_cloudbuild/node_modules.tar.gz; then
+          echo "Cache exists - restoring from GCS"
+          gsutil cp gs://webdesigntest-12d11_cloudbuild/node_modules.tar.gz /workspace/
+          tar -xzf node_modules.tar.gz
+          rm node_modules.tar.gz
         else
-          echo "Cache miss - restoring from GCS"
-          gsutil -m cp -r gs://webdesigntest-12d11_cloudbuild/node_modules/* /workspace/node_modules/ || true
+          echo "Cache miss"
         fi
 
   # Install dependencies
@@ -19,8 +22,14 @@ steps:
     id: 'install'
 
   # Save npm cache
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['-m', 'cp', '-r', '/workspace/node_modules/*', 'gs://webdesigntest-12d11_cloudbuild/node_modules/']
+  - name: 'node:18'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        echo "Creating node_modules cache..."
+        tar -czf node_modules.tar.gz node_modules/
+        gsutil cp node_modules.tar.gz gs://webdesigntest-12d11_cloudbuild/node_modules.tar.gz
     waitFor: ['install']
 
   # Restore Next.js build cache
@@ -96,6 +105,8 @@ steps:
         cd /workspace
         echo "Checking Firebase CLI version..."
         /workspace/firebase-tools/node_modules/.bin/firebase --version
+        echo "Enabling web frameworks experiment..."
+        /workspace/firebase-tools/node_modules/.bin/firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN --non-interactive
         echo "Starting Firebase deployment..."
         /workspace/firebase-tools/node_modules/.bin/firebase deploy --only hosting --token $_FIREBASE_TOKEN --json --non-interactive --project webdesigntest-12d11
     env:
