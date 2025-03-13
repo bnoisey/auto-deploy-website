@@ -90,13 +90,12 @@ steps:
       - |
         echo "Setting up Firebase deployment..."
         npm install firebase-tools@latest --no-save
-        export PATH="$PATH:$(npm bin)"
         echo "Checking Firebase CLI version..."
-        firebase --version
+        ./node_modules/.bin/firebase --version
         echo "Enabling web frameworks experiment..."
-        firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN
+        ./node_modules/.bin/firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN
         echo "Starting Firebase deployment..."
-        firebase deploy --project webdesigntest-12d11 --only hosting --token $_FIREBASE_TOKEN --json
+        ./node_modules/.bin/firebase deploy --project webdesigntest-12d11 --only hosting --token $_FIREBASE_TOKEN --json
     env:
       - 'FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ'
       - 'FIREBASE_AUTH_DOMAIN=webdesigntest-12d11.firebaseapp.com'
