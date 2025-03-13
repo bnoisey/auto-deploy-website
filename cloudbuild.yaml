@@ -18,32 +18,14 @@ steps:
     args: ['ci']
     id: 'install'
 
-  # Save npm cache - only copy production dependencies
+  # Save npm cache
   - name: 'gcr.io/cloud-builders/gsutil'
-    args: 
-      - '-m'
-      - 'rsync'
-      - '-r'
-      - '-d'
-      - '--include=*/package-lock.json'
-      - '--include=*/node_modules/**'
-      - '--exclude=*/node_modules/.cache/**'
-      - '--exclude=*/node_modules/.*/node_modules/**'
-      - '/workspace/node_modules/'
-      - 'gs://webdesigntest-12d11_cloudbuild/node_modules/'
+    args: ['-m', 'cp', '-r', '/workspace/node_modules/*', 'gs://webdesigntest-12d11_cloudbuild/node_modules/']
     waitFor: ['install']
 
-  # Restore Next.js build cache - more selective copying
+  # Restore Next.js build cache
   - name: 'gcr.io/cloud-builders/gsutil'
-    args:
-      - '-m'
-      - 'rsync'
-      - '-r'
-      - '-d'
-      - '--include=**/cache/**'
-      - '--include=**/*.json'
-      - 'gs://webdesigntest-12d11_cloudbuild/.next/'
-      - '/workspace/.next/'
+    args: ['-m', 'cp', '-r', 'gs://webdesigntest-12d11_cloudbuild/.next/*', '/workspace/.next/']
     id: 'restore-next-cache'
     waitFor: ['-']
     allowFailure: true
@@ -127,18 +109,6 @@ steps:
       - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
     waitFor: ['docker-build']
 
-  # Set up IAM policy binding for Cloud Run
-  - name: 'gcr.io/cloud-builders/gcloud'
-    args:
-      - 'run'
-      - 'services'
-      - 'add-iam-policy-binding'
-      - '${_SERVICE_NAME}'
-      - '--region=${_REGION}'
-      - '--member=serviceAccount:firebase-deployer@webdesigntest-12d11.iam.gserviceaccount.com'
-      - '--role=roles/run.invoker'
-    id: 'set-iam'
-
   # Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
@@ -157,7 +127,6 @@ steps:
       - '--service-account=firebase-deployer@webdesigntest-12d11.iam.gserviceaccount.com'
       - '--set-env-vars'
       - 'NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=webdesigntest-12d11.firebaseapp.com,NEXT_PUBLIC_FIREBASE_PROJECT_ID=webdesigntest-12d11,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=webdesigntest-12d11.firebasestorage.app,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=504944796544,NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
-    waitFor: ['docker-build', 'set-iam']
 
 images:
   - 'gcr.io/webdesigntest-12d11/${_SERVICE_NAME}:$COMMIT_SHA'
