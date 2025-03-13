@@ -124,6 +124,8 @@ steps:
         /workspace/firebase-tools/node_modules/.bin/firebase --version
         echo "Enabling web frameworks experiment..."
         /workspace/firebase-tools/node_modules/.bin/firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN --non-interactive
+        echo "Active service account:"
+        gcloud auth list
         echo "Starting Firebase deployment..."
         /workspace/firebase-tools/node_modules/.bin/firebase deploy --only hosting --token $_FIREBASE_TOKEN --json --non-interactive --project ${_FIREBASE_PROJECT_ID}
     secretEnv: ['_FIREBASE_TOKEN']
