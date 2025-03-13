@@ -6,14 +6,17 @@ steps:
       - '-c'
       - |
         echo "Checking for node_modules cache..."
+        mkdir -p /workspace/node_modules
         if gsutil stat gs://webdesigntest-12d11_cloudbuild/node_modules.tar.gz; then
           echo "Cache exists - restoring from GCS"
           gsutil cp gs://webdesigntest-12d11_cloudbuild/node_modules.tar.gz /workspace/
           tar -xzf node_modules.tar.gz
           rm node_modules.tar.gz
+          echo "Cache restored successfully"
         else
-          echo "Cache miss"
+          echo "Cache miss - clean install will be performed"
         fi
+        ls -la /workspace/node_modules
 
   # Install dependencies
   - name: 'node:18'
@@ -27,9 +30,14 @@ steps:
     args:
       - '-c'
       - |
-        echo "Creating node_modules cache..."
-        tar -czf node_modules.tar.gz node_modules/
-        gsutil cp node_modules.tar.gz gs://webdesigntest-12d11_cloudbuild/node_modules.tar.gz
+        if [ -d "node_modules" ] && [ "$(ls -A node_modules)" ]; then
+          echo "Creating node_modules cache..."
+          tar -czf node_modules.tar.gz node_modules/
+          gsutil cp node_modules.tar.gz gs://webdesigntest-12d11_cloudbuild/node_modules.tar.gz
+          echo "Cache saved successfully"
+        else
+          echo "No node_modules directory or empty directory - skipping cache"
+        fi
     waitFor: ['install']
 
   # Restore Next.js build cache
@@ -41,8 +49,17 @@ steps:
 
   # Build the Next.js application
   - name: 'node:18'
-    entrypoint: npm
-    args: ['run', 'build']
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        echo "Verifying environment..."
+        echo "Node version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "Directory contents:"
+        ls -la
+        echo "Starting Next.js build..."
+        npm run build
     env:
       - 'NODE_ENV=production'
       - 'NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ'
