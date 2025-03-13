@@ -5,6 +5,7 @@ steps:
     args:
       - '-c'
       - |
+        apt-get update && apt-get install -y google-cloud-sdk # Install gsutil
         echo "Checking for node_modules cache..."
         mkdir -p /workspace/node_modules
         if gsutil stat gs://webdesigntest-12d11_cloudbuild/node_modules.tar.gz; then
@@ -20,8 +21,12 @@ steps:
 
   # Install dependencies
   - name: 'node:18'
-    entrypoint: npm
-    args: ['ci']
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        apt-get update && apt-get install -y google-cloud-sdk # Install gsutil
+        npm ci
     id: 'install'
 
   # Save npm cache
@@ -125,7 +130,9 @@ steps:
         echo "Enabling web frameworks experiment..."
         /workspace/firebase-tools/node_modules/.bin/firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN --non-interactive
         echo "Active service account:"
-        gcloud auth list
+        echo "gcloud auth list output:"
+        gcloud auth list 2>&1
+        sleep 10
         echo "Starting Firebase deployment..."
         /workspace/firebase-tools/node_modules/.bin/firebase deploy --only hosting --token $_FIREBASE_TOKEN --json --non-interactive --project ${_FIREBASE_PROJECT_ID}
     secretEnv: ['_FIREBASE_TOKEN']
