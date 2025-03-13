@@ -47,15 +47,15 @@ steps:
 
   # Restore Next.js build cache
   - name: 'node:18'
-  entrypoint: bash
-  args:
-    - '-c'
-    - |
-      apt-get update && apt-get install -y google-cloud-sdk
-      gsutil -m cp -r gs://webdesigntest-12d11_cloudbuild/.next/* /workspace/.next/
-  id: 'restore-next-cache'
-  waitFor: ['-']
-  allowFailure: true
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        apt-get update && apt-get install -y google-cloud-sdk
+        gsutil -m cp -r gs://webdesigntest-12d11_cloudbuild/.next/* /workspace/.next/
+    id: 'restore-next-cache'
+    waitFor: ['-']
+    allowFailure: true
 
   # Build the Next.js application
   - name: 'node:18'
