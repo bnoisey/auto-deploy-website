@@ -1,0 +1,34 @@
+# Ignore everything by default
+*
+
+# Include only necessary files
+!.next/**
+!public/**
+!package.json
+!package-lock.json
+!next.config.js
+!firebase.json
+!.firebaserc
+!firestore.rules
+!firestore.indexes.json
+!storage.rules
+
+# Explicitly ignore node_modules and other unnecessary files
+.git
+.gitignore
+node_modules
+npm-debug.log
+README.md
+.env*
+.editorconfig
+.eslintrc*
+.prettierrc*
+*.log
+*.md
+test/
+__tests__/
+coverage/
+.vscode/
+.idea/
+*.swp
+*.swo 
