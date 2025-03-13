@@ -123,10 +123,10 @@ steps:
         echo "Checking Firebase CLI version..."
         /workspace/firebase-tools/node_modules/.bin/firebase --version
         echo "Enabling web frameworks experiment..."
-        /workspace/firebase-tools/node_modules/.bin/firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN --non-interactive
+        /workspace/firebase-tools/node_modules/.bin/firebase experiments:enable webframeworks --token $FIREBASE_TOKEN --non-interactive
         echo "Starting Firebase deployment..."
-        /workspace/firebase-tools/node_modules/.bin/firebase deploy --only hosting --token $_FIREBASE_TOKEN --json --non-interactive --project ${_FIREBASE_PROJECT_ID}
-    secretEnv: ['_FIREBASE_TOKEN']
+        /workspace/firebase-tools/node_modules/.bin/firebase deploy --only hosting --token $FIREBASE_TOKEN --json --non-interactive --project ${_FIREBASE_PROJECT_ID}
+    secretEnv: ['FIREBASE_TOKEN']
     waitFor: ['build']
 
   # Deploy to Cloud Run
@@ -162,7 +162,7 @@ substitutions:
 availableSecrets:
   secretManager:
     - versionName: 'projects/webdesigntest-12d11/secrets/firebase-token/versions/latest'
-      env: '_FIREBASE_TOKEN'
+      env: 'FIREBASE_TOKEN'
 
 options:
   logging: CLOUD_LOGGING_ONLY
