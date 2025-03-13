@@ -1,8 +1,34 @@
 steps:
+  # Restore npm cache
+  - name: 'node:18'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        if [ -d /workspace/node_modules ]; then
+          echo "Cache exists"
+        else
+          echo "Cache miss - restoring from GCS"
+          gsutil -m cp -r gs://webdesigntest-12d11_cloudbuild/node_modules/* /workspace/node_modules/ || true
+        fi
+
   # Install dependencies
   - name: 'node:18'
     entrypoint: npm
-    args: ['install']
+    args: ['ci']
+    id: 'install'
+
+  # Save npm cache
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', '/workspace/node_modules/*', 'gs://webdesigntest-12d11_cloudbuild/node_modules/']
+    waitFor: ['install']
+
+  # Restore Next.js build cache
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', 'gs://webdesigntest-12d11_cloudbuild/.next/*', '/workspace/.next/']
+    id: 'restore-next-cache'
+    waitFor: ['-']
+    allowFailure: true
 
   # Build the Next.js application
   - name: 'node:18'
@@ -16,13 +42,22 @@ steps:
       - 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=webdesigntest-12d11.firebasestorage.app'
       - 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=504944796544'
       - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
+    id: 'build'
+    waitFor: ['install', 'restore-next-cache']
 
-  # Build the container image
+  # Save Next.js build cache
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args: ['-m', 'cp', '-r', '/workspace/.next/*', 'gs://webdesigntest-12d11_cloudbuild/.next/']
+    waitFor: ['build']
+
+  # Build the container image with layer caching
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
+      - 'gcr.io/webdesigntest-12d11/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '--cache-from'
+      - 'gcr.io/webdesigntest-12d11/${_SERVICE_NAME}:latest'
       - '--build-arg'
       - 'NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ'
       - '--build-arg'
@@ -36,6 +71,16 @@ steps:
       - '--build-arg'
       - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
       - '.'
+    id: 'docker-build'
+    waitFor: ['build']
+
+  # Tag the image as latest for future cache
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'tag'
+      - 'gcr.io/webdesigntest-12d11/${_SERVICE_NAME}:$COMMIT_SHA'
+      - 'gcr.io/webdesigntest-12d11/${_SERVICE_NAME}:latest'
+    waitFor: ['docker-build']
 
   # Enable Firebase web frameworks and deploy to Firebase Hosting
   - name: 'node:18'
@@ -58,6 +103,7 @@ steps:
       - 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=webdesigntest-12d11.firebasestorage.app'
       - 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=504944796544'
       - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
+    waitFor: ['docker-build']
 
   # Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -66,7 +112,7 @@ steps:
       - 'deploy'
       - '${_SERVICE_NAME}'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
+      - 'gcr.io/webdesigntest-12d11/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region'
       - '${_REGION}'
       - '--platform'
@@ -76,9 +122,11 @@ steps:
       - '3000'
       - '--set-env-vars'
       - 'NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ,NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=webdesigntest-12d11.firebaseapp.com,NEXT_PUBLIC_FIREBASE_PROJECT_ID=webdesigntest-12d11,NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=webdesigntest-12d11.firebasestorage.app,NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=504944796544,NEXT_PUBLIC_FIREBASE_APP_ID=1:504944796544:web:b14fcaa569d03ce2499765'
+    waitFor: ['docker-build']
 
 images:
-  - 'gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$COMMIT_SHA'
+  - 'gcr.io/webdesigntest-12d11/${_SERVICE_NAME}:$COMMIT_SHA'
+  - 'gcr.io/webdesigntest-12d11/${_SERVICE_NAME}:latest'
 
 substitutions:
   _SERVICE_NAME: clh-dev-website
