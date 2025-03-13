@@ -46,11 +46,16 @@ steps:
     waitFor: ['install']
 
   # Restore Next.js build cache
-  - name: 'gcr.io/cloud-builders/gsutil'
-    args: ['-m', 'cp', '-r', 'gs://webdesigntest-12d11_cloudbuild/.next/*', '/workspace/.next/']
-    id: 'restore-next-cache'
-    waitFor: ['-']
-    allowFailure: true
+  - name: 'node:18'
+  entrypoint: bash
+  args:
+    - '-c'
+    - |
+      apt-get update && apt-get install -y google-cloud-sdk
+      gsutil -m cp -r gs://webdesigntest-12d11_cloudbuild/.next/* /workspace/.next/
+  id: 'restore-next-cache'
+  waitFor: ['-']
+  allowFailure: true
 
   # Build the Next.js application
   - name: 'node:18'
@@ -73,6 +78,9 @@ steps:
       - 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${_FIREBASE_STORAGE_BUCKET}'
       - 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${_FIREBASE_MESSAGING_SENDER_ID}'
       - 'NEXT_PUBLIC_FIREBASE_APP_ID=${_FIREBASE_APP_ID}'
+      - 'EMAIL_USER=brad@covelane.health'
+      - 'EMAIL_APP_PASSWORD=$_EMAIL_APP_PASSWORD'
+    secretEnv: ['_EMAIL_APP_PASSWORD']
     id: 'build'
     waitFor: ['install', 'restore-next-cache']
 
@@ -170,8 +178,10 @@ substitutions:
 
 availableSecrets:
   secretManager:
-    - versionName: 'projects/webdesigntest-12d11/secrets/firebase-token/versions/latest'
+    - versionName: 'projects/504944796544/secrets/_FIREBASE_TOKEN/versions/latest' #Update with the actual resource name
       env: '_FIREBASE_TOKEN'
+    - versionName: 'projects/504944796544/secrets/_EMAIL_APP_PASSWORD/versions/latest'
+      env: '_EMAIL_APP_PASSWORD'
 
 options:
   logging: CLOUD_LOGGING_ONLY
