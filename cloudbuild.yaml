@@ -89,13 +89,15 @@ steps:
       - '-c'
       - |
         echo "Setting up Firebase deployment..."
+        mkdir -p /workspace/firebase-tools
+        cd /workspace/firebase-tools
+        npm init -y
         npm install firebase-tools@latest --no-save
+        cd /workspace
         echo "Checking Firebase CLI version..."
-        ./node_modules/.bin/firebase --version
-        echo "Enabling web frameworks experiment..."
-        ./node_modules/.bin/firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN
+        /workspace/firebase-tools/node_modules/.bin/firebase --version
         echo "Starting Firebase deployment..."
-        ./node_modules/.bin/firebase deploy --project webdesigntest-12d11 --only hosting --token $_FIREBASE_TOKEN --json
+        /workspace/firebase-tools/node_modules/.bin/firebase deploy --only hosting --token $_FIREBASE_TOKEN --json --non-interactive --project webdesigntest-12d11
     env:
       - 'FIREBASE_API_KEY=AIzaSyD2ZeFKBfqqZ0Qxvz_6wMWXlpf0LRiFLzQ'
       - 'FIREBASE_AUTH_DOMAIN=webdesigntest-12d11.firebaseapp.com'
