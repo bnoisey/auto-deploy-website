@@ -58,7 +58,14 @@ steps:
       - '-c'
       - |
         apt-get update && apt-get install -y google-cloud-sdk
-        gsutil -m cp -r gs://webdesigntest-12d11_cloudbuild/.next/* /workspace/.next/
+        mkdir -p /workspace/.next
+        if gsutil -q stat gs://webdesigntest-12d11_cloudbuild/.next/**; then
+          echo "Next.js build cache exists - restoring..."
+          gsutil -m cp -r gs://webdesigntest-12d11_cloudbuild/.next/* /workspace/.next/
+          echo "Next.js cache restored successfully"
+        else
+          echo "No Next.js build cache found - will create after build"
+        fi
     id: 'restore-next-cache'
     waitFor: ['-']
     allowFailure: true
@@ -133,22 +140,25 @@ steps:
     args:
       - '-c'
       - |
+        # Install gcloud SDK
+        echo "Installing gcloud SDK..."
+        apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg curl
+        echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+        curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+        apt-get update && apt-get install -y google-cloud-sdk
+
+        # Set up Firebase deployment
         echo "Setting up Firebase deployment..."
-        mkdir -p /workspace/firebase-tools
-        cd /workspace/firebase-tools
-        npm init -y
         npm install firebase-tools@latest --no-save
-        cd /workspace
+        
         echo "Checking Firebase CLI version..."
-        /workspace/firebase-tools/node_modules/.bin/firebase --version
+        ./node_modules/.bin/firebase --version
+        
         echo "Enabling web frameworks experiment..."
-        /workspace/firebase-tools/node_modules/.bin/firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN --non-interactive
-        echo "Active service account:"
-        echo "gcloud auth list output:"
-        gcloud auth list 2>&1
-        sleep 10
+        ./node_modules/.bin/firebase experiments:enable webframeworks --token $_FIREBASE_TOKEN --non-interactive
+        
         echo "Starting Firebase deployment..."
-        /workspace/firebase-tools/node_modules/.bin/firebase deploy --only hosting --token $_FIREBASE_TOKEN --json --non-interactive --project ${_FIREBASE_PROJECT_ID}
+        ./node_modules/.bin/firebase deploy --only hosting --token $_FIREBASE_TOKEN --json --non-interactive --project ${_FIREBASE_PROJECT_ID}
     secretEnv: ['_FIREBASE_TOKEN']
     waitFor: ['build']
 
@@ -184,7 +194,7 @@ substitutions:
 
 availableSecrets:
   secretManager:
-    - versionName: 'projects/504944796544/secrets/_FIREBASE_TOKEN/versions/latest' #Update with the actual resource name
+    - versionName: 'projects/504944796544/secrets/_FIREBASE_TOKEN/versions/latest'
       env: '_FIREBASE_TOKEN'
     - versionName: 'projects/504944796544/secrets/_EMAIL_APP_PASSWORD/versions/latest'
       env: '_EMAIL_APP_PASSWORD'
